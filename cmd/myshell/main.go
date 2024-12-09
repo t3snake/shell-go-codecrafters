@@ -11,6 +11,16 @@ import (
 // Ensures gofmt doesn't remove the "fmt" import in stage 1 (feel free to remove this!)
 var _ = fmt.Fprint
 
+func isValidCommand(command string, allowed []string) bool {
+	for i := 0; i < len(allowed); i++ {
+		if allowed[i] == command {
+			// TODO
+			return true
+		}
+	}
+	return false
+}
+
 func execREPL(allowed_prompts []string) {
 	var command string
 	var args []string
@@ -29,20 +39,17 @@ func execREPL(allowed_prompts []string) {
 		command = prompt[0]
 		args = prompt[1:]
 
-		found := false
-
-		for i := 0; i < len(allowed_prompts); i++ {
-			if allowed_prompts[i] == command {
-				// TODO
-				found = true
-			}
-		}
-
-		if found {
+		if isValidCommand(command, allowed_prompts) {
 			if command == "exit" && len(args) > 0 && args[0] == "0" {
 				break
 			} else if command == "echo" {
 				fmt.Print(strings.Join(args, " "), "\n")
+			} else if command == "type" {
+				if len(args) > 0 && isValidCommand(args[0], allowed_prompts) {
+					fmt.Printf("%s is a shell builtin\n", args[0])
+				} else {
+					fmt.Printf("%s: not found\n", args[0])
+				}
 			}
 		} else {
 			fmt.Printf("%s: not found\n", command)
@@ -51,7 +58,7 @@ func execREPL(allowed_prompts []string) {
 }
 
 func main() {
-	allowed_prompts := []string{"exit", "echo"}
+	allowed_prompts := []string{"exit", "echo", "type"}
 
 	execREPL(allowed_prompts)
 }
