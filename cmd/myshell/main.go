@@ -12,16 +12,22 @@ import (
 var _ = fmt.Fprint
 
 func execREPL(allowed_prompts []string) {
+	var command string
+	var args []string
+
 	for {
 		fmt.Fprint(os.Stdout, "$ ")
 
 		// Wait for user input
-		prompt, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		prompt_newline, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		command := strings.Split(strings.Split(prompt, "\n")[0], " ")[0]
+		prompt := strings.Split(strings.Split(prompt_newline, "\n")[0], " ")
+
+		command = prompt[0]
+		args = prompt[1:]
 
 		found := false
 
@@ -32,14 +38,18 @@ func execREPL(allowed_prompts []string) {
 			}
 		}
 
-		if !found {
+		if found {
+			if command == "exit" && len(args) > 0 && args[0] == "0" {
+				break
+			}
+		} else {
 			fmt.Printf("%s: not found\n", command)
 		}
 	}
 }
 
 func main() {
-	allowed_prompts := make([]string, 0)
+	allowed_prompts := []string{"exit"}
 
 	execREPL(allowed_prompts)
 }
