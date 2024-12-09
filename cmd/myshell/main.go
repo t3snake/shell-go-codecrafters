@@ -41,6 +41,8 @@ func execREPL(allowed_prompts []string) {
 		if found {
 			if command == "exit" && len(args) > 0 && args[0] == "0" {
 				break
+			} else if command == "echo" {
+				fmt.Print(strings.Join(args, " "), "\n")
 			}
 		} else {
 			fmt.Printf("%s: not found\n", command)
@@ -49,7 +51,7 @@ func execREPL(allowed_prompts []string) {
 }
 
 func main() {
-	allowed_prompts := []string{"exit"}
+	allowed_prompts := []string{"exit", "echo"}
 
 	execREPL(allowed_prompts)
 }
