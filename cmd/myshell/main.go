@@ -6,11 +6,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
+	"runtime"
 	"strings"
 )
 
-// Ensures gofmt doesn't remove the "fmt" import in stage 1 (feel free to remove this!)
-var _ = fmt.Fprint
+var pwd string
 
 func isValidCommand(command string, allowed []string) bool {
 	for i := 0; i < len(allowed); i++ {
@@ -47,11 +48,7 @@ func execInBuiltCmd(command string, args, allowed_prompts []string) {
 			}
 		}
 	case "pwd":
-		path, err := os.Executable()
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(path)
+		fmt.Println(pwd)
 	}
 }
 
@@ -106,6 +103,9 @@ func execREPL(allowed_prompts []string) {
 
 func main() {
 	allowed_prompts := []string{"exit", "echo", "type", "pwd"}
+
+	_, filename, _, _ := runtime.Caller(0)
+	pwd = path.Dir(filename)
 
 	execREPL(allowed_prompts)
 }
