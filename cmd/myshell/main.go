@@ -108,7 +108,7 @@ func main() {
 	// pwd would be same as root of current project if called with .sh file
 	// current file is in root/cmd/myshell so remove cmd/myshell to get root
 	build_dir := path.Dir(filename)
-	pwd = strings.ReplaceAll(build_dir, "cmd/myshell", "")
+	pwd = strings.ReplaceAll(build_dir, "/cmd/myshell", "")
 
 	execREPL(allowed_prompts)
 }
