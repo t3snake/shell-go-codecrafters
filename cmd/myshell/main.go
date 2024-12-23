@@ -33,7 +33,7 @@ func isInPath(command string) string {
 
 func updatePwdIfExists(new_path, command string) {
 	//nested .. case
-	if new_path[len(new_path)-2:] == ".." {
+	if new_path[len(new_path)-2:] == ".." || new_path[len(new_path)-3:] == "../" {
 		updatePwdIfExists(path.Dir(new_path), command)
 		return
 	}
@@ -44,6 +44,39 @@ func updatePwdIfExists(new_path, command string) {
 		return
 	}
 	pwd = new_path
+}
+
+func resolvePathForCd(new_path string) string {
+	if new_path[0] == '~' {
+		// home path
+		home_path := os.Getenv("HOME")
+		new_path = strings.Replace(new_path, "~", home_path, 1)
+	} else if new_path[:2] == "./" {
+		// relative path
+		new_path = pwd + new_path[1:]
+	} else if new_path == ".." {
+		// just parent directory
+		new_path = path.Dir(pwd)
+	} else if new_path[:3] == "../" {
+		// parent directory + further
+		new_pwd := pwd
+		for len(new_path) > 2 && new_path[:3] == "../" {
+			// ../../(..abc) case
+			new_pwd = path.Dir(new_pwd)
+			new_path = new_path[3:]
+		}
+		if len(new_path) > 0 {
+			new_path = new_pwd + "/" + new_path
+		} else {
+			new_path = new_pwd
+		}
+	} else if new_path[0] == '/' {
+		// absolute path new_path remains same
+	} else {
+		// check if arg exists as directory in current folder
+		new_path = pwd + "/" + new_path
+	}
+	return new_path
 }
 
 func execInBuiltCmd(command string, args, allowed_prompts []string) {
@@ -73,31 +106,7 @@ func execInBuiltCmd(command string, args, allowed_prompts []string) {
 		}
 
 		new_path := args[0]
-		if new_path[:2] == "./" {
-			// relative path
-			new_path = pwd + new_path[1:]
-		} else if new_path == ".." {
-			// just parent directory
-			new_path = path.Dir(pwd)
-		} else if new_path[:3] == "../" {
-			// parent directory + further
-			new_pwd := pwd
-			for len(new_path) > 2 && new_path[:3] == "../" {
-				// ../../(..abc) case
-				new_pwd = path.Dir(new_pwd)
-				new_path = new_path[3:]
-			}
-			if len(new_path) > 0 {
-				new_path = new_pwd + "/" + new_path
-			} else {
-				new_path = new_pwd
-			}
-		} else if new_path[0] == '/' {
-			// absolute path new_path remains same
-		} else {
-			// check if arg exists as directory in current folder
-			new_path = pwd + "/" + new_path
-		}
+		new_path = resolvePathForCd(new_path)
 		updatePwdIfExists(new_path, command)
 
 	}
