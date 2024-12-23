@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -22,28 +23,12 @@ func isValidCommand(command string, allowed []string) bool {
 }
 
 func isInPath(command string) string {
-	path := os.Getenv("PATH")
-
-	directories := strings.Split(path, ":")
-
-	for i := 0; i < len(directories); i++ {
-		// fmt.Println(directories[i])
-		files, err := os.ReadDir(directories[i])
-		if err != nil {
-			continue
-		}
-
-		for _, file := range files {
-			if file.IsDir() {
-				continue
-			} else if file.Name() == command {
-				return directories[i] + "/" + file.Name()
-			}
-		}
-
+	path, err := exec.LookPath(command)
+	if err != nil {
+		return ""
 	}
 
-	return ""
+	return path
 }
 
 func execREPL(allowed_prompts []string) {
@@ -83,7 +68,23 @@ func execREPL(allowed_prompts []string) {
 				}
 			}
 		} else {
-			fmt.Printf("%s: command not found\n", command)
+			found := isInPath(command)
+			if found != "" {
+				cmd := exec.Command(command, args...)
+
+				var out strings.Builder
+				cmd.Stdout = &out
+
+				err := cmd.Run()
+
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					fmt.Println(out.String())
+				}
+			} else {
+				fmt.Printf("%s: command not found\n", command)
+			}
 		}
 	}
 }
