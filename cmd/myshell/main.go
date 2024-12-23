@@ -31,6 +31,45 @@ func isInPath(command string) string {
 	return path
 }
 
+func execInBuiltCmd(command string, args, allowed_prompts []string) {
+	switch command {
+	case "echo":
+		fmt.Print(strings.Join(args, " "), "\n")
+	case "type":
+		if len(args) > 0 && isValidCommand(args[0], allowed_prompts) {
+			fmt.Printf("%s is a shell builtin\n", args[0])
+		} else {
+			found := isInPath(args[0])
+			if found != "" {
+				fmt.Printf("%s is %s\n", args[0], found)
+			} else {
+				fmt.Printf("%s: not found\n", args[0])
+			}
+		}
+	case "pwd":
+		path, err := os.Executable()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(path)
+	}
+}
+
+func execPathCmd(command string, args []string) {
+	cmd := exec.Command(command, args...)
+
+	var out strings.Builder
+	cmd.Stdout = &out
+
+	err := cmd.Run()
+
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Print(out.String())
+	}
+}
+
 func execREPL(allowed_prompts []string) {
 	var command string
 	var args []string
@@ -52,36 +91,12 @@ func execREPL(allowed_prompts []string) {
 		if isValidCommand(command, allowed_prompts) {
 			if command == "exit" && len(args) > 0 && args[0] == "0" {
 				break
-			} else if command == "echo" {
-				fmt.Print(strings.Join(args, " "), "\n")
-			} else if command == "type" {
-
-				if len(args) > 0 && isValidCommand(args[0], allowed_prompts) {
-					fmt.Printf("%s is a shell builtin\n", args[0])
-				} else {
-					found := isInPath(args[0])
-					if found != "" {
-						fmt.Printf("%s is %s\n", args[0], found)
-					} else {
-						fmt.Printf("%s: not found\n", args[0])
-					}
-				}
 			}
+			execInBuiltCmd(command, args, allowed_prompts)
 		} else {
 			found := isInPath(command)
 			if found != "" {
-				cmd := exec.Command(command, args...)
-
-				var out strings.Builder
-				cmd.Stdout = &out
-
-				err := cmd.Run()
-
-				if err != nil {
-					fmt.Println(err)
-				} else {
-					fmt.Print(out.String())
-				}
+				execPathCmd(command, args)
 			} else {
 				fmt.Printf("%s: command not found\n", command)
 			}
@@ -90,7 +105,7 @@ func execREPL(allowed_prompts []string) {
 }
 
 func main() {
-	allowed_prompts := []string{"exit", "echo", "type"}
+	allowed_prompts := []string{"exit", "echo", "type", "pwd"}
 
 	execREPL(allowed_prompts)
 }
