@@ -56,7 +56,7 @@ func execInBuiltCmd(command string, args, allowed_prompts []string) {
 			// absolute path
 			err := os.Chdir(args[0])
 			if err != nil {
-				fmt.Printf("%s: %s: No such file or directory", command, args[0])
+				fmt.Printf("%s: %s: No such file or directory\n", command, args[0])
 			}
 			pwd = args[0]
 		} else {
