@@ -6,8 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path"
-	"runtime"
 	"strings"
 )
 
@@ -49,6 +47,21 @@ func execInBuiltCmd(command string, args, allowed_prompts []string) {
 		}
 	case "pwd":
 		fmt.Println(pwd)
+	case "cd":
+		if args[0][:2] == "./" {
+			// TODO: relative path
+		} else if args[0][:3] == "../" {
+			// TODO: parent directory
+		} else if args[0][0] == '/' {
+			// absolute path
+			err := os.Chdir(args[0])
+			if err != nil {
+				fmt.Printf("%s: %s: No such file or directory", command, args[0])
+			}
+			pwd = args[0]
+		} else {
+			// check if arg exists as directory in current folder
+		}
 	}
 }
 
@@ -102,13 +115,9 @@ func execREPL(allowed_prompts []string) {
 }
 
 func main() {
-	allowed_prompts := []string{"exit", "echo", "type", "pwd"}
+	allowed_prompts := []string{"exit", "echo", "type", "pwd", "cd"}
 
-	_, filename, _, _ := runtime.Caller(0)
-	// pwd would be same as root of current project if called with .sh file
-	// current file is in root/cmd/myshell so remove cmd/myshell to get root
-	build_dir := path.Dir(filename)
-	pwd = strings.ReplaceAll(build_dir, "/cmd/myshell", "")
+	pwd, _ = os.Getwd()
 
 	execREPL(allowed_prompts)
 }
