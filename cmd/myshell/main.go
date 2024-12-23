@@ -30,7 +30,7 @@ func isInPath(command string) string {
 		// fmt.Println(directories[i])
 		files, err := os.ReadDir(directories[i])
 		if err != nil {
-			log.Fatal(err)
+			continue
 		}
 
 		for _, file := range files {
