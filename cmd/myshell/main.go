@@ -83,7 +83,7 @@ func execREPL(allowed_prompts []string) {
 				}
 			}
 		} else {
-			fmt.Printf("%s: not found\n", command)
+			fmt.Printf("%s: command not found\n", command)
 		}
 	}
 }
