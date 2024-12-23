@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 )
 
@@ -30,10 +31,26 @@ func isInPath(command string) string {
 	return path
 }
 
+func updatePwdIfExists(new_path, command string) {
+	//nested .. case
+	if new_path[len(new_path)-2:] == ".." {
+		updatePwdIfExists(path.Dir(new_path), command)
+		return
+	}
+
+	err := os.Chdir(new_path)
+	if err != nil {
+		fmt.Printf("%s: %s: No such file or directory\n", command, new_path)
+		return
+	}
+	pwd = new_path
+}
+
 func execInBuiltCmd(command string, args, allowed_prompts []string) {
 	switch command {
 	case "echo":
 		fmt.Print(strings.Join(args, " "), "\n")
+
 	case "type":
 		if len(args) > 0 && isValidCommand(args[0], allowed_prompts) {
 			fmt.Printf("%s is a shell builtin\n", args[0])
@@ -45,23 +62,44 @@ func execInBuiltCmd(command string, args, allowed_prompts []string) {
 				fmt.Printf("%s: not found\n", args[0])
 			}
 		}
+
 	case "pwd":
 		fmt.Println(pwd)
+
 	case "cd":
-		if args[0][:2] == "./" {
-			// TODO: relative path
-		} else if args[0][:3] == "../" {
-			// TODO: parent directory
-		} else if args[0][0] == '/' {
-			// absolute path
-			err := os.Chdir(args[0])
-			if err != nil {
-				fmt.Printf("%s: %s: No such file or directory\n", command, args[0])
+		if len(args) != 1 {
+			fmt.Println("Insufficient arguments")
+			break
+		}
+
+		new_path := args[0]
+		if new_path[:2] == "./" {
+			// relative path
+			new_path = pwd + new_path[1:]
+		} else if new_path == ".." {
+			// just parent directory
+			new_path = path.Dir(pwd)
+		} else if new_path[:3] == "../" {
+			// parent directory + further
+			new_pwd := pwd
+			for len(new_path) > 2 && new_path[:3] == "../" {
+				// ../../(..abc) case
+				new_pwd = path.Dir(new_pwd)
+				new_path = new_path[3:]
 			}
-			pwd = args[0]
+			if len(new_path) > 0 {
+				new_path = new_pwd + "/" + new_path
+			} else {
+				new_path = new_pwd
+			}
+		} else if new_path[0] == '/' {
+			// absolute path new_path remains same
 		} else {
 			// check if arg exists as directory in current folder
+			new_path = pwd + "/" + new_path
 		}
+		updatePwdIfExists(new_path, command)
+
 	}
 }
 
