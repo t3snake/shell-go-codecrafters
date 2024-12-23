@@ -80,7 +80,7 @@ func execREPL(allowed_prompts []string) {
 				if err != nil {
 					fmt.Println(err)
 				} else {
-					fmt.Println(out.String())
+					fmt.Print(out.String())
 				}
 			} else {
 				fmt.Printf("%s: command not found\n", command)
