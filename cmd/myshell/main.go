@@ -13,7 +13,7 @@ import (
 var pwd string
 
 func isValidEscChar(char byte) bool {
-	return char == '$' || char == '\'' || char == '"' || char == '\\'
+	return char == '$' || char == '"' || char == '\\'
 }
 
 func parseArgs(line string) []string {
@@ -26,7 +26,9 @@ func parseArgs(line string) []string {
 
 	for idx, char := range line {
 		if is_escaped {
-			tmp_arg += string(char)
+			if !in_double_quotes {
+				tmp_arg += string(char)
+			}
 			is_escaped = false
 			continue
 		}
