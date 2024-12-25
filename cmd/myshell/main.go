@@ -171,7 +171,12 @@ func execREPL(allowed_prompts []string) {
 
 		first_space := strings.IndexByte(line, ' ')
 
-		command = line[:first_space]
+		if first_space == -1 {
+			command = line
+		} else {
+			command = line[:first_space]
+		}
+
 		args = parseArgs(line)
 
 		// fmt.Println(command)
