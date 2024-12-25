@@ -12,18 +12,37 @@ import (
 
 var pwd string
 
+func isValidEscChar(char byte) bool {
+	return char == '$' || char == '\'' || char == '"' || char == '\\'
+}
+
 func parseArgs(line string) []string {
 	args := make([]string, 0)
 	var in_single_quotes bool
 	var in_double_quotes bool
+	var is_escaped bool
 
 	var tmp_arg string
 
-	for _, char := range line {
+	for idx, char := range line {
+		if is_escaped {
+			tmp_arg += string(char)
+			is_escaped = false
+			continue
+		}
+
 		if char == '"' && !in_single_quotes {
 			in_double_quotes = !in_double_quotes
 		} else if char == '\'' && !in_double_quotes {
 			in_single_quotes = !in_single_quotes
+		} else if char == '\\' && !in_single_quotes {
+			if !in_double_quotes {
+				is_escaped = true
+			} else if in_double_quotes && idx < len(line)-1 && isValidEscChar(line[idx+1]) {
+				is_escaped = true
+			} else {
+				tmp_arg += string(char)
+			}
 		} else if char == ' ' && !in_single_quotes && !in_double_quotes {
 			if tmp_arg != "" {
 				args = append(args, tmp_arg)
