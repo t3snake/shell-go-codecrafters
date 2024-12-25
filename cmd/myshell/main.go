@@ -190,9 +190,6 @@ func execREPL(allowed_prompts []string) {
 		command = all_args[0]
 		args = all_args[1:]
 
-		fmt.Println(command)
-		fmt.Println(args)
-
 		if isValidCommand(command, allowed_prompts) {
 			if command == "exit" && len(args) > 0 && args[0] == "0" {
 				break
