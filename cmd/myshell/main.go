@@ -20,11 +20,9 @@ func parseArgs(line string) []string {
 	var tmp_arg string
 
 	for _, char := range line {
-		if char == '"' {
-			// TODO
+		if char == '"' && !in_single_quotes {
 			in_double_quotes = !in_double_quotes
-		}
-		if char == '\'' && !in_double_quotes {
+		} else if char == '\'' && !in_double_quotes {
 			in_single_quotes = !in_single_quotes
 		} else if char == ' ' && !in_single_quotes {
 			if tmp_arg != "" {
