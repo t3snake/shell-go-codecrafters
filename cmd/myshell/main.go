@@ -12,10 +12,35 @@ import (
 
 var pwd string
 
+func parseArgs(line string) []string {
+	args := make([]string, 0)
+	var in_single_quotes bool
+	var in_double_quotes bool
+
+	var tmp_arg string
+
+	for _, char := range line {
+		if char == '"' {
+			// TODO
+			in_double_quotes = !in_double_quotes
+		}
+		if char == '\'' && !in_double_quotes {
+			in_single_quotes = !in_single_quotes
+		} else if char == ' ' && !in_single_quotes {
+			args = append(args, tmp_arg)
+			tmp_arg = ""
+		} else {
+			tmp_arg += string(char)
+		}
+	}
+	args = append(args, tmp_arg)
+
+	return args[1:]
+}
+
 func isValidCommand(command string, allowed []string) bool {
 	for i := 0; i < len(allowed); i++ {
 		if allowed[i] == command {
-			// TODO
 			return true
 		}
 	}
@@ -140,10 +165,15 @@ func execREPL(allowed_prompts []string) {
 			log.Fatal(err)
 		}
 
-		prompt := strings.Split(strings.Split(prompt_newline, "\n")[0], " ")
+		line := strings.Split(prompt_newline, "\n")[0]
 
-		command = prompt[0]
-		args = prompt[1:]
+		first_space := strings.IndexByte(line, ' ')
+
+		command = line[:first_space]
+		args = parseArgs(line)
+
+		// fmt.Println(command)
+		// fmt.Println(args)
 
 		if isValidCommand(command, allowed_prompts) {
 			if command == "exit" && len(args) > 0 && args[0] == "0" {
