@@ -54,7 +54,7 @@ func parseArgs(line string) []string {
 	}
 	args = append(args, tmp_arg)
 
-	return args[1:]
+	return args
 }
 
 func isValidCommand(command string, allowed []string) bool {
@@ -186,18 +186,12 @@ func execREPL(allowed_prompts []string) {
 
 		line := strings.Split(prompt_newline, "\n")[0]
 
-		first_space := strings.IndexByte(line, ' ')
+		all_args := parseArgs(line)
+		command = all_args[0]
+		args = all_args[1:]
 
-		if first_space == -1 {
-			command = line
-		} else {
-			command = line[:first_space]
-		}
-
-		args = parseArgs(line)
-
-		// fmt.Println(command)
-		// fmt.Println(args)
+		fmt.Println(command)
+		fmt.Println(args)
 
 		if isValidCommand(command, allowed_prompts) {
 			if command == "exit" && len(args) > 0 && args[0] == "0" {
