@@ -24,7 +24,7 @@ func parseArgs(line string) []string {
 			in_double_quotes = !in_double_quotes
 		} else if char == '\'' && !in_double_quotes {
 			in_single_quotes = !in_single_quotes
-		} else if char == ' ' && !in_single_quotes {
+		} else if char == ' ' && !in_single_quotes && !in_double_quotes {
 			if tmp_arg != "" {
 				args = append(args, tmp_arg)
 			}
