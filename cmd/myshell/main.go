@@ -26,9 +26,7 @@ func parseArgs(line string) []string {
 
 	for idx, char := range line {
 		if is_escaped {
-			if !in_double_quotes {
-				tmp_arg += string(char)
-			}
+			tmp_arg += string(char)
 			is_escaped = false
 			continue
 		}
