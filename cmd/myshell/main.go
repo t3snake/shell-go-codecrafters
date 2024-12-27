@@ -14,6 +14,7 @@ var pwd string
 
 const REDIR_MODE_1 int = 1
 const REDIR_MODE_2 int = 2
+const REDIR_MODE_APPEND int = 3
 
 func isValidEscChar(char byte) bool {
 	return char == '$' || char == '"' || char == '\\'
@@ -70,6 +71,10 @@ func fileForRedirect(args []string) (string, int, int) {
 			if idx+1 < len(args) {
 				return args[idx+1], idx, REDIR_MODE_2
 			}
+		} else if arg == ">>" {
+			if idx+1 < len(args) {
+				return args[idx+1], idx, REDIR_MODE_APPEND
+			}
 		}
 	}
 	return "", -1, -1
@@ -80,7 +85,7 @@ func writeResultToFile(result, file string, is_append bool) {
 	var err error
 
 	if is_append {
-		r_file, err = os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		r_file, err = os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	} else {
 		r_file, err = os.Create(file)
 	}
@@ -253,9 +258,9 @@ func execREPL(allowed_prompts []string) {
 		}
 
 		if is_print_to_file {
-			if redir_mode == REDIR_MODE_1 { // Print stderr and write stdout
+			if redir_mode == REDIR_MODE_1 || redir_mode == REDIR_MODE_APPEND { // Print stderr and write stdout
 				if result != "" {
-					writeResultToFile(result, redirect_file, false)
+					writeResultToFile(result, redirect_file, redir_mode == REDIR_MODE_APPEND)
 				}
 				if result_err != "" {
 					fmt.Print(result_err)
