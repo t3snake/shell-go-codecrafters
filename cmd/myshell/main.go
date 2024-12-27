@@ -183,12 +183,14 @@ func execPathCmd(command string, args []string) string {
 	cmd := exec.Command(command, args...)
 
 	var out strings.Builder
+	var err_out strings.Builder
 	cmd.Stdout = &out
+	cmd.Stderr = &err_out
 
 	err := cmd.Run()
 
 	if err != nil {
-		return fmt.Sprint(out.String())
+		return fmt.Sprint(err_out.String())
 	} else {
 		return fmt.Sprint(out.String())
 	}
