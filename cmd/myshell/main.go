@@ -276,6 +276,11 @@ func execREPL(allowed_prompts []string) {
 		} else {
 			fmt.Print(result)
 		}
+
+		// clear cache
+		result = ""
+		result_err = ""
+		is_print_to_file = false
 	}
 }
 
