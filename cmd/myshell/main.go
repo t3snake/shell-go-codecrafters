@@ -15,6 +15,7 @@ var pwd string
 const REDIR_MODE_1 int = 1
 const REDIR_MODE_2 int = 2
 const REDIR_MODE_APPEND_1 int = 3
+const REDIR_MODE_APPEND_2 int = 4
 
 func isValidEscChar(char byte) bool {
 	return char == '$' || char == '"' || char == '\\'
@@ -74,6 +75,10 @@ func fileForRedirect(args []string) (string, int, int) {
 		} else if arg == ">>" || arg == "1>>" {
 			if idx+1 < len(args) {
 				return args[idx+1], idx, REDIR_MODE_APPEND_1
+			}
+		} else if arg == "2>>" {
+			if idx+1 < len(args) {
+				return args[idx+1], idx, REDIR_MODE_APPEND_2
 			}
 		}
 	}
@@ -265,9 +270,9 @@ func execREPL(allowed_prompts []string) {
 				if result_err != "" {
 					fmt.Print(result_err)
 				}
-			} else if redir_mode == REDIR_MODE_2 {
+			} else if redir_mode == REDIR_MODE_2 || redir_mode == REDIR_MODE_APPEND_2 {
 				// Print stdout and write stderr
-				writeResultToFile(result_err, redirect_file, false)
+				writeResultToFile(result_err, redirect_file, redir_mode == REDIR_MODE_APPEND_2)
 
 				if result != "" {
 					fmt.Print(result)
