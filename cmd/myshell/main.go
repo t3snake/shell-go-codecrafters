@@ -179,8 +179,8 @@ func execInBuiltCmd(command string, args, allowed_prompts []string) string {
 	return ""
 }
 
-// return result as string and isError as bool
-func execPathCmd(command string, args []string) (string, bool) {
+// return stdout and stderr as string
+func execPathCmd(command string, args []string) (string, string) {
 	cmd := exec.Command(command, args...)
 
 	var out strings.Builder
@@ -188,13 +188,9 @@ func execPathCmd(command string, args []string) (string, bool) {
 	cmd.Stdout = &out
 	cmd.Stderr = &err_out
 
-	err := cmd.Run()
+	_ = cmd.Run()
 
-	if err != nil {
-		return fmt.Sprint(err_out.String()), true
-	} else {
-		return fmt.Sprint(out.String()), false
-	}
+	return out.String(), err_out.String()
 }
 
 func execREPL(allowed_prompts []string) {
@@ -203,7 +199,7 @@ func execREPL(allowed_prompts []string) {
 
 	var is_print_to_file bool
 	var result string
-	var is_error bool
+	var result_err string
 
 	for {
 		fmt.Fprint(os.Stdout, "$ ")
@@ -235,14 +231,17 @@ func execREPL(allowed_prompts []string) {
 		} else {
 			found := isInPath(command)
 			if found != "" {
-				result, is_error = execPathCmd(command, args)
+				result, result_err = execPathCmd(command, args)
 			} else {
 				result = fmt.Sprintf("%s: command not found\n", command)
 			}
 		}
 
-		if is_print_to_file && !is_error {
+		if is_print_to_file {
 			writeResultToFile(result, redirect_file)
+			if result_err != "" {
+				fmt.Print(result_err)
+			}
 		} else {
 			fmt.Print(result)
 		}
