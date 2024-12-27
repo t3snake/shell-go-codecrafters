@@ -57,6 +57,30 @@ func parseArgs(line string) []string {
 	return args
 }
 
+func fileForRedirect(args []string) string {
+	for idx, arg := range args {
+		if arg == ">" || arg == "1>" {
+			if idx+1 < len(args) {
+				return args[idx+1]
+			}
+		}
+	}
+	return ""
+}
+
+func writeResultToFile(result, file string) {
+	r_file, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer r_file.Close()
+
+	writer := bufio.NewWriter(r_file)
+	fmt.Fprint(writer, result)
+
+	writer.Flush()
+}
+
 func isValidCommand(command string, allowed []string) bool {
 	for i := 0; i < len(allowed); i++ {
 		if allowed[i] == command {
@@ -75,19 +99,19 @@ func isInPath(command string) string {
 	return path
 }
 
-func updatePwdIfExists(new_path, command string) {
+func updatePwdIfExists(new_path, command string) string {
 	//nested .. case
 	if new_path[len(new_path)-2:] == ".." || new_path[len(new_path)-3:] == "../" {
 		updatePwdIfExists(path.Dir(new_path), command)
-		return
+		return ""
 	}
 
 	err := os.Chdir(new_path)
 	if err != nil {
-		fmt.Printf("%s: %s: No such file or directory\n", command, new_path)
-		return
+		return fmt.Sprintf("%s: %s: No such file or directory\n", command, new_path)
 	}
 	pwd = new_path
+	return ""
 }
 
 func resolvePathForCd(new_path string) string {
@@ -123,40 +147,39 @@ func resolvePathForCd(new_path string) string {
 	return new_path
 }
 
-func execInBuiltCmd(command string, args, allowed_prompts []string) {
+func execInBuiltCmd(command string, args, allowed_prompts []string) string {
 	switch command {
 	case "echo":
-		fmt.Print(strings.Join(args, " "), "\n")
+		return fmt.Sprint(strings.Join(args, " "), "\n")
 
 	case "type":
 		if len(args) > 0 && isValidCommand(args[0], allowed_prompts) {
-			fmt.Printf("%s is a shell builtin\n", args[0])
+			return fmt.Sprintf("%s is a shell builtin\n", args[0])
 		} else {
 			found := isInPath(args[0])
 			if found != "" {
-				fmt.Printf("%s is %s\n", args[0], found)
+				return fmt.Sprintf("%s is %s\n", args[0], found)
 			} else {
-				fmt.Printf("%s: not found\n", args[0])
+				return fmt.Sprintf("%s: not found\n", args[0])
 			}
 		}
 
 	case "pwd":
-		fmt.Println(pwd)
+		return fmt.Sprintln(pwd)
 
 	case "cd":
 		if len(args) != 1 {
-			fmt.Println("Insufficient arguments")
-			break
+			return fmt.Sprintln("Insufficient arguments")
 		}
 
 		new_path := args[0]
 		new_path = resolvePathForCd(new_path)
-		updatePwdIfExists(new_path, command)
-
+		return updatePwdIfExists(new_path, command)
 	}
+	return ""
 }
 
-func execPathCmd(command string, args []string) {
+func execPathCmd(command string, args []string) string {
 	cmd := exec.Command(command, args...)
 
 	var out strings.Builder
@@ -165,15 +188,18 @@ func execPathCmd(command string, args []string) {
 	err := cmd.Run()
 
 	if err != nil {
-		fmt.Println(err)
+		return fmt.Sprintln(err)
 	} else {
-		fmt.Print(out.String())
+		return fmt.Sprint(out.String())
 	}
 }
 
 func execREPL(allowed_prompts []string) {
 	var command string
 	var args []string
+
+	var is_print_to_file bool
+	var result string
 
 	for {
 		fmt.Fprint(os.Stdout, "$ ")
@@ -190,18 +216,27 @@ func execREPL(allowed_prompts []string) {
 		command = all_args[0]
 		args = all_args[1:]
 
+		redirect_file := fileForRedirect(args)
+		is_print_to_file = redirect_file != ""
+
 		if isValidCommand(command, allowed_prompts) {
 			if command == "exit" && len(args) > 0 && args[0] == "0" {
 				break
 			}
-			execInBuiltCmd(command, args, allowed_prompts)
+			result = execInBuiltCmd(command, args, allowed_prompts)
 		} else {
 			found := isInPath(command)
 			if found != "" {
-				execPathCmd(command, args)
+				result = execPathCmd(command, args)
 			} else {
-				fmt.Printf("%s: command not found\n", command)
+				result = fmt.Sprintf("%s: command not found\n", command)
 			}
+		}
+
+		if is_print_to_file {
+			writeResultToFile(result, redirect_file)
+		} else {
+			fmt.Print(result)
 		}
 	}
 }
