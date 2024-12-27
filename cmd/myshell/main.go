@@ -188,7 +188,7 @@ func execPathCmd(command string, args []string) string {
 	err := cmd.Run()
 
 	if err != nil {
-		return fmt.Sprintln(err)
+		return fmt.Sprintln(out.String())
 	} else {
 		return fmt.Sprint(out.String())
 	}
