@@ -258,17 +258,17 @@ func execREPL(allowed_prompts []string) {
 		}
 
 		if is_print_to_file {
-			if redir_mode == REDIR_MODE_1 || redir_mode == REDIR_MODE_APPEND { // Print stderr and write stdout
-				if result != "" {
-					writeResultToFile(result, redirect_file, redir_mode == REDIR_MODE_APPEND)
-				}
+			if redir_mode == REDIR_MODE_1 || redir_mode == REDIR_MODE_APPEND {
+				// Print stderr and write stdout
+				writeResultToFile(result, redirect_file, redir_mode == REDIR_MODE_APPEND)
+
 				if result_err != "" {
 					fmt.Print(result_err)
 				}
-			} else if redir_mode == REDIR_MODE_2 { // Print stdout and write stderr
-				if result_err != "" {
-					writeResultToFile(result_err, redirect_file, false)
-				}
+			} else if redir_mode == REDIR_MODE_2 {
+				// Print stdout and write stderr
+				writeResultToFile(result_err, redirect_file, false)
+
 				if result != "" {
 					fmt.Print(result)
 				}
