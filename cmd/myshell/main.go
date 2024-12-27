@@ -12,6 +12,9 @@ import (
 
 var pwd string
 
+const REDIR_MODE_1 int = 1
+const REDIR_MODE_2 int = 2
+
 func isValidEscChar(char byte) bool {
 	return char == '$' || char == '"' || char == '\\'
 }
@@ -57,19 +60,23 @@ func parseArgs(line string) []string {
 	return args
 }
 
-func fileForRedirect(args []string) (string, int) {
+func fileForRedirect(args []string) (string, int, int) {
 	for idx, arg := range args {
 		if arg == ">" || arg == "1>" {
 			if idx+1 < len(args) {
-				return args[idx+1], idx
+				return args[idx+1], idx, REDIR_MODE_1
+			}
+		} else if arg == "2>" {
+			if idx+1 < len(args) {
+				return args[idx+1], idx, REDIR_MODE_2
 			}
 		}
 	}
-	return "", -1
+	return "", -1, -1
 }
 
 func writeResultToFile(result, file string) {
-	r_file, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE, 0666)
+	r_file, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -216,7 +223,7 @@ func execREPL(allowed_prompts []string) {
 		command = all_args[0]
 		args = all_args[1:]
 
-		redirect_file, idx := fileForRedirect(args)
+		redirect_file, idx, redir_mode := fileForRedirect(args)
 		is_print_to_file = redirect_file != ""
 
 		if is_print_to_file {
@@ -238,9 +245,20 @@ func execREPL(allowed_prompts []string) {
 		}
 
 		if is_print_to_file {
-			writeResultToFile(result, redirect_file)
-			if result_err != "" {
-				fmt.Print(result_err)
+			if redir_mode == REDIR_MODE_1 { // Print stderr and write stdout
+				if result != "" {
+					writeResultToFile(result, redirect_file)
+				}
+				if result_err != "" {
+					fmt.Print(result_err)
+				}
+			} else if redir_mode == REDIR_MODE_2 { // Print stdout and write stderr
+				if result_err != "" {
+					writeResultToFile(result_err, redirect_file)
+				}
+				if result != "" {
+					fmt.Print(result)
+				}
 			}
 		} else {
 			fmt.Print(result)
