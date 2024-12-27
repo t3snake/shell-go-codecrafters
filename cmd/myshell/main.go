@@ -57,15 +57,15 @@ func parseArgs(line string) []string {
 	return args
 }
 
-func fileForRedirect(args []string) string {
+func fileForRedirect(args []string) (string, int) {
 	for idx, arg := range args {
 		if arg == ">" || arg == "1>" {
 			if idx+1 < len(args) {
-				return args[idx+1]
+				return args[idx+1], idx
 			}
 		}
 	}
-	return ""
+	return "", -1
 }
 
 func writeResultToFile(result, file string) {
@@ -188,7 +188,7 @@ func execPathCmd(command string, args []string) string {
 	err := cmd.Run()
 
 	if err != nil {
-		return fmt.Sprintln(out.String())
+		return fmt.Sprint(out.String())
 	} else {
 		return fmt.Sprint(out.String())
 	}
@@ -216,8 +216,12 @@ func execREPL(allowed_prompts []string) {
 		command = all_args[0]
 		args = all_args[1:]
 
-		redirect_file := fileForRedirect(args)
+		redirect_file, idx := fileForRedirect(args)
 		is_print_to_file = redirect_file != ""
+
+		if is_print_to_file {
+			args = args[:idx]
+		}
 
 		if isValidCommand(command, allowed_prompts) {
 			if command == "exit" && len(args) > 0 && args[0] == "0" {
