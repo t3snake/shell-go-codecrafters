@@ -75,8 +75,16 @@ func fileForRedirect(args []string) (string, int, int) {
 	return "", -1, -1
 }
 
-func writeResultToFile(result, file string) {
-	r_file, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+func writeResultToFile(result, file string, is_append bool) {
+	var r_file *os.File
+	var err error
+
+	if is_append {
+		r_file, err = os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	} else {
+		r_file, err = os.Create(file)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -247,14 +255,14 @@ func execREPL(allowed_prompts []string) {
 		if is_print_to_file {
 			if redir_mode == REDIR_MODE_1 { // Print stderr and write stdout
 				if result != "" {
-					writeResultToFile(result, redirect_file)
+					writeResultToFile(result, redirect_file, false)
 				}
 				if result_err != "" {
 					fmt.Print(result_err)
 				}
 			} else if redir_mode == REDIR_MODE_2 { // Print stdout and write stderr
 				if result_err != "" {
-					writeResultToFile(result_err, redirect_file)
+					writeResultToFile(result_err, redirect_file, false)
 				}
 				if result != "" {
 					fmt.Print(result)
