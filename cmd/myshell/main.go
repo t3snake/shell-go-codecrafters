@@ -198,8 +198,8 @@ func execInBuiltCmd(command string, args, allowed_prompts []string, history []Hi
 		return updatePwdIfExists(new_path, command)
 	case "history":
 		result := ""
-		for i := len(history) - 1; i >= 0; i++ {
-			result += fmt.Sprintln(history[i].command)
+		for idx, val := range history {
+			result += fmt.Sprintf("\t%d  %s\n", idx, val.command)
 		}
 		return result
 	}
