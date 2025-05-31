@@ -204,7 +204,7 @@ func execInBuiltCmd(command string, args, allowed_prompts []string) string {
 	return ""
 }
 
-// return stdout and stderr as string
+// Return stdout and stderr as string for given command and args
 func execPathCmd(command string, args []string) (string, string) {
 	cmd := exec.Command(command, args...)
 
@@ -293,6 +293,8 @@ func main() {
 	allowed_prompts := []string{"exit", "echo", "type", "pwd", "cd"}
 
 	pwd, _ = os.Getwd()
+
+	buildAutocompletionDB(allowed_prompts)
 
 	execREPL(allowed_prompts)
 }
