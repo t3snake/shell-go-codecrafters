@@ -69,7 +69,15 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 				continue
 			}
 
-			if tab_count == 1 {
+			// check common denominator for results
+			denominator := getCompletionDenominator(prefix, results)
+			if len(denominator) > 0 {
+				for _, byt := range denominator {
+					echoLetterAndAppendToBuffer(byt, &current_buffer)
+				}
+
+				tab_count = 0
+			} else if tab_count == 1 {
 				fmt.Print(TERMINAL_BELL)
 			} else if tab_count == 2 {
 				fmt.Print("\r\n")
@@ -104,12 +112,12 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 			return string(current_buffer), nil
 		} else {
 			// echo the rest
-			echoLetterAndAppenddToBuffer(typed_character, &current_buffer)
+			echoLetterAndAppendToBuffer(typed_character, &current_buffer)
 		}
 	}
 }
 
-func echoLetterAndAppenddToBuffer(typed_character byte, buffer *[]byte) {
+func echoLetterAndAppendToBuffer(typed_character byte, buffer *[]byte) {
 	fmt.Print(string(typed_character))
 	*buffer = append(*buffer, typed_character)
 }
@@ -141,4 +149,30 @@ func replaceLastWord(buffer, new_last_word []byte) []byte {
 	initial_words := buffer[:len(buffer)-len(last_word)]
 
 	return append(initial_words, new_last_word...)
+}
+
+// Give additional common bits of given completions on top of prefix.
+func getCompletionDenominator(prefix string, completions []string) []byte {
+	result := make([]byte, 0)
+	for i := len(prefix); ; i++ {
+		if len(completions[0]) <= i {
+			break
+		}
+
+		var unequal = false
+		next_char := completions[0][i]
+		for _, completion := range completions {
+			if len(completion) <= i || completion[i] != next_char {
+				unequal = true
+				break
+			}
+		}
+
+		if unequal {
+			break
+		}
+
+		result = append(result, next_char)
+	}
+	return result
 }
