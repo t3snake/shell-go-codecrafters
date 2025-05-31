@@ -16,9 +16,15 @@ const RESTORE_CURSOR_POS = "\033[u"
 const MOVE_CURSOR_TO_BEG = "\033[2G"  // for input line its column 2 (after '$ ')
 const MOVE_CURSOR_X_LEFT = "\033[%dD" // formatter: move cursor left %d times
 const TERMINAL_BELL = "\x07"
+const TERMINAL_UP = "\x1b[A"
+const TERMINAL_DOWN = "\x1b[B"
 
 // Implementation of simple GNU readline in raw terminal mode
-func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
+func terminalReadLine(auto_completion_db *PrefixTreeNode, history []HistoryEntry) (string, error) {
+	// -1 didnt start navigation, else index of history
+	cur_history := -1
+	var temp_history []byte = nil
+
 	// change terminal to raw mode
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
@@ -105,11 +111,63 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 		} else if typed_character == 3 {
 			// ctrl+c or sigint handling (3)
 			fmt.Print("\r\n")
+			// reset history navigation
+			cur_history = -1
 			return "", fmt.Errorf("SIGINT")
 		} else if typed_character == '\n' || typed_character == '\r' {
 			// return on line feed (LF) (\n or 10) or carriage return (CR) (\r or 13)
 			fmt.Print("\r\n")
 			return string(current_buffer), nil
+		} else if typed_character == 27 { // arrow keys
+			// (Left, Right, Up, Down) are (27 91 68, 27 91 67, 27 91 65, 27 91 66).
+			next_bytes := make([]byte, 2)
+			n, err := os.Stdin.Read(next_bytes)
+			if err != nil || n < 2 {
+				continue
+			}
+			if next_bytes[0] == 91 {
+				if next_bytes[1] == 65 { // Up
+					if cur_history == -1 { // navigation started first time
+						cur_history = len(history) - 1
+						temp_history = current_buffer
+					} else {
+						cur_history = cur_history - 1
+					}
+
+					if cur_history < 0 {
+						cur_history = 0
+						continue
+					}
+					len_prev_buffer := len(current_buffer)
+					current_buffer = []byte(history[cur_history].command)
+					redrawBuffer(current_buffer, len_prev_buffer)
+				} else if next_bytes[1] == 66 { // Down
+					if cur_history == -1 {
+						continue
+					} else {
+						cur_history = cur_history + 1
+					}
+
+					if cur_history >= len(history) {
+						len_prev_buffer := len(current_buffer)
+						current_buffer = temp_history
+						redrawBuffer(current_buffer, len_prev_buffer)
+
+						//reset if we go all the way back to current command
+						cur_history = -1
+						temp_history = nil
+						continue
+					}
+					len_prev_buffer := len(current_buffer)
+					current_buffer = []byte(history[cur_history].command)
+					redrawBuffer(current_buffer, len_prev_buffer)
+				} else {
+					continue
+				}
+			} else {
+				continue
+			}
+
 		} else {
 			// echo the rest
 			echoLetterAndAppendToBuffer(typed_character, &current_buffer)

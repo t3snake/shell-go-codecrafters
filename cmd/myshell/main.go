@@ -242,7 +242,7 @@ func execREPL(allowed_prompts []string, auto_completion_db *PrefixTreeNode, hist
 		fmt.Fprint(os.Stdout, "$ ")
 
 		// Wait for user input
-		prompt_newline, err := terminalReadLine(auto_completion_db)
+		prompt_newline, err := terminalReadLine(auto_completion_db, history)
 		if err != nil {
 			if err.Error() == "SIGINT" {
 				return 130 // exit code 128 + N, N=2 for SIGINT
