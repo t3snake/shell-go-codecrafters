@@ -13,9 +13,11 @@ import (
 
 const SAVE_CURSOR_POS = "\033[s"
 const RESTORE_CURSOR_POS = "\033[u"
-const MOVE_CURSOR_TO_BEG = "\033[0G"
+const MOVE_CURSOR_TO_BEG = "\033[2G" // for input line its column 2 (after '$ ')
 const MOVE_CURSOR_1_LEFT = "\033[1D"
+const TERMINAL_BELL = "\x07"
 
+// Implementation of simple GNU readline in raw terminal mode
 func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 	// change terminal to raw mode
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
@@ -48,7 +50,7 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 
 			if len(results) == 1 {
 				len_prev_buffer := len(current_buffer)
-				current_buffer = replaceLastWord(current_buffer, []byte(prefix))
+				current_buffer = replaceLastWord(current_buffer, []byte(results[0]))
 				redrawBuffer(current_buffer, len_prev_buffer)
 				continue
 			}
@@ -63,9 +65,9 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 
 			if len(current_buffer) > 0 {
 				current_buffer = current_buffer[:len(current_buffer)-1]
+				// \b moves cursor backwards, space overrides and move cursor back again
+				fmt.Print("\b \b")
 			}
-			// \b moves cursor backwards, space overrides and move cursor back again
-			fmt.Print("\b \b")
 		} else if typed_character == 3 {
 			// ctrl+c or sigint handling (3)
 			fmt.Print("\r\n")
@@ -87,14 +89,14 @@ func echoLetterAndAppenddToBuffer(typed_character byte, buffer *[]byte) {
 }
 
 func redrawBuffer(buffer []byte, len_prev_buffer int) {
-	fmt.Print("\r") // move cursor to the beginning
+	fmt.Print(MOVE_CURSOR_TO_BEG) // move cursor to the beginning
 
 	// override previous input
 	for range len_prev_buffer {
 		fmt.Print(" ")
 	}
 
-	fmt.Print("\r") // move cursor to the beginning again
+	fmt.Print(MOVE_CURSOR_TO_BEG) // move cursor to the beginning again
 	fmt.Print(string(buffer))
 }
 
