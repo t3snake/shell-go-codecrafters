@@ -31,6 +31,9 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 	var current_buffer []byte
 	input_char := make([]byte, 1)
 
+	// successive tab count
+	var tab_count = 0
+
 	for {
 		n, err := os.Stdin.Read(input_char)
 		if err != nil || n == 0 {
@@ -39,6 +42,13 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 
 		typed_character := input_char[0]
 
+		// handle successive tab count
+		if typed_character == '\t' {
+			tab_count++
+		} else {
+			tab_count = 0
+		}
+
 		if typed_character == '\t' {
 			// tab handling (\t or 9)
 			prefix := calculateLastWord(current_buffer)
@@ -46,6 +56,7 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 
 			if len(results) == 0 {
 				fmt.Print(TERMINAL_BELL)
+				tab_count = 0
 				continue
 			}
 
@@ -54,10 +65,23 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 				// add a space at the end after completion
 				current_buffer = replaceLastWord(current_buffer, []byte(results[0]+" "))
 				redrawBuffer(current_buffer, len_prev_buffer)
+				tab_count = 0
 				continue
 			}
 
-			// TODO print all suggestions in new line and move cursor back to where we are typing
+			if tab_count == 1 {
+				fmt.Print(TERMINAL_BELL)
+			} else if tab_count == 2 {
+				fmt.Print("\r\n")
+				for _, result := range results {
+					fmt.Printf("%s  ", result)
+				}
+				fmt.Print("\r\n")
+				fmt.Print("$ ")
+				fmt.Print(string(current_buffer))
+
+				tab_count = 0
+			}
 
 		} else if typed_character == '\b' || typed_character == 127 {
 			// backspace handling (\b or 8) or terminal might give (del or 127)
