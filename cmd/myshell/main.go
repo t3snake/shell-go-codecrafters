@@ -168,7 +168,7 @@ func resolvePathForCd(new_path string) string {
 	return new_path
 }
 
-func execInBuiltCmd(command string, args, allowed_prompts []string) string {
+func execInBuiltCmd(command string, args, allowed_prompts []string, history []HistoryEntry) string {
 	switch command {
 	case "echo":
 		return fmt.Sprint(strings.Join(args, " "), "\n")
@@ -196,6 +196,12 @@ func execInBuiltCmd(command string, args, allowed_prompts []string) string {
 		new_path := args[0]
 		new_path = resolvePathForCd(new_path)
 		return updatePwdIfExists(new_path, command)
+	case "history":
+		result := ""
+		for i := len(history) - 1; i >= 0; i++ {
+			result += fmt.Sprintln(history[i].command)
+		}
+		return result
 	}
 	return ""
 }
@@ -215,7 +221,7 @@ func execPathCmd(command string, args []string) (string, string) {
 }
 
 // Executes Read Eval Print Loop and returns exit code when done
-func execREPL(allowed_prompts []string, auto_completion_db *PrefixTreeNode) int {
+func execREPL(allowed_prompts []string, auto_completion_db *PrefixTreeNode, history []HistoryEntry) int {
 	var command string
 	var args []string
 
@@ -236,6 +242,8 @@ func execREPL(allowed_prompts []string, auto_completion_db *PrefixTreeNode) int 
 			return 1 // unexpected error
 		}
 
+		addToHistory(prompt_newline, &history)
+
 		line := strings.Split(prompt_newline, "\n")[0]
 
 		all_args := parseArgs(line)
@@ -253,7 +261,7 @@ func execREPL(allowed_prompts []string, auto_completion_db *PrefixTreeNode) int 
 			if command == "exit" && len(args) > 0 && args[0] == "0" {
 				break
 			}
-			result = execInBuiltCmd(command, args, allowed_prompts)
+			result = execInBuiltCmd(command, args, allowed_prompts, history)
 		} else {
 			found := isInPath(command)
 			if found != "" {
@@ -293,11 +301,13 @@ func execREPL(allowed_prompts []string, auto_completion_db *PrefixTreeNode) int 
 }
 
 func main() {
-	allowed_prompts := []string{"exit", "echo", "type", "pwd", "cd"}
+	allowed_prompts := []string{"exit", "echo", "type", "pwd", "cd", "history"}
 	pwd, _ = os.Getwd()
-	auto_completion_db := buildAutocompletionDB(allowed_prompts)
 
-	exit_code := execREPL(allowed_prompts, auto_completion_db)
+	auto_completion_db := buildAutocompletionDB(allowed_prompts)
+	history := initializeHistory()
+
+	exit_code := execREPL(allowed_prompts, auto_completion_db, history)
 
 	os.Exit(exit_code)
 }
