@@ -1,5 +1,10 @@
 package main
 
+import (
+	"os"
+	"strings"
+)
+
 type PrefixTreeNode struct {
 	is_end_of_word bool
 	children       map[rune]*PrefixTreeNode
@@ -12,8 +17,14 @@ func buildAutocompletionDB(command_list []string) *PrefixTreeNode {
 		make(map[rune]*PrefixTreeNode, 0),
 	}
 
-	for _, prompt := range command_list {
-		addToPrefixTree(prompt, &root_node)
+	for _, command := range command_list {
+		addToPrefixTree(command, &root_node)
+	}
+
+	// add path commands
+	path_commands := getCommandsFromPath()
+	for _, command := range path_commands {
+		addToPrefixTree(command, &root_node)
 	}
 
 	return &root_node
@@ -67,5 +78,30 @@ func getAllChildrenAsList(node *PrefixTreeNode, current_string string, result *[
 
 	for key, value := range node.children {
 		getAllChildrenAsList(value, current_string+string(key), result)
+	}
+}
+
+func getCommandsFromPath() []string {
+	results := make([]string, 0)
+
+	path := os.Getenv("PATH")
+	dirs := strings.Split(path, string(os.PathListSeparator))
+
+	for _, dir := range dirs {
+		getCommandsFromDir(dir, &results)
+	}
+	return results
+}
+
+func getCommandsFromDir(dir string, results *[]string) {
+	entries, _ := os.ReadDir(dir)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		entry.Type()
+		if entry.Type()&0111 != 0 {
+			*results = append(*results, entry.Name())
+		}
 	}
 }
