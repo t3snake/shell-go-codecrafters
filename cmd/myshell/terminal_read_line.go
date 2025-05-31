@@ -13,8 +13,8 @@ import (
 
 const SAVE_CURSOR_POS = "\033[s"
 const RESTORE_CURSOR_POS = "\033[u"
-const MOVE_CURSOR_TO_BEG = "\033[2G" // for input line its column 2 (after '$ ')
-const MOVE_CURSOR_1_LEFT = "\033[1D"
+const MOVE_CURSOR_TO_BEG = "\033[2G"  // for input line its column 2 (after '$ ')
+const MOVE_CURSOR_X_LEFT = "\033[%dD" // formatter: move cursor left %d times
 const TERMINAL_BELL = "\x07"
 
 // Implementation of simple GNU readline in raw terminal mode
@@ -45,12 +45,14 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 			results := searchPrefixTree(prefix, auto_completion_db)
 
 			if len(results) == 0 {
+				fmt.Print(TERMINAL_BELL)
 				continue
 			}
 
 			if len(results) == 1 {
 				len_prev_buffer := len(current_buffer)
-				current_buffer = replaceLastWord(current_buffer, []byte(results[0]))
+				// add a space at the end after completion
+				current_buffer = replaceLastWord(current_buffer, []byte(results[0]+" "))
 				redrawBuffer(current_buffer, len_prev_buffer)
 				continue
 			}
@@ -89,14 +91,14 @@ func echoLetterAndAppenddToBuffer(typed_character byte, buffer *[]byte) {
 }
 
 func redrawBuffer(buffer []byte, len_prev_buffer int) {
-	fmt.Print(MOVE_CURSOR_TO_BEG) // move cursor to the beginning
+	fmt.Printf(MOVE_CURSOR_X_LEFT, len_prev_buffer) // move cursor to the beginning
 
 	// override previous input
 	for range len_prev_buffer {
 		fmt.Print(" ")
 	}
 
-	fmt.Print(MOVE_CURSOR_TO_BEG) // move cursor to the beginning again
+	fmt.Printf(MOVE_CURSOR_X_LEFT, len_prev_buffer) // move cursor to the beginning again
 	fmt.Print(string(buffer))
 }
 
