@@ -5,6 +5,21 @@ type PrefixTreeNode struct {
 	children       map[rune]PrefixTreeNode
 }
 
+// Build prefix tree with list of commands. Returns root node.
+func buildAutocompletionDB(command_list []string) PrefixTreeNode {
+	root := PrefixTreeNode{
+		false,
+		make(map[rune]PrefixTreeNode, 0),
+	}
+
+	for _, prompt := range command_list {
+		addToPrefixTree(prompt, &root)
+	}
+
+	return root
+}
+
+// Add command to given prefix tree.
 func addToPrefixTree(command string, root *PrefixTreeNode) {
 	var trav = root
 
@@ -29,20 +44,7 @@ func addToPrefixTree(command string, root *PrefixTreeNode) {
 	}
 }
 
-func getAllChildrenAsList(node PrefixTreeNode, current_string string, result *[]string) {
-	if node.is_end_of_word {
-		*result = append(*result, current_string)
-	}
-
-	if len(node.children) == 0 {
-		return
-	}
-
-	for key, value := range node.children {
-		getAllChildrenAsList(value, current_string+string(key), result)
-	}
-}
-
+// Search all possible words in given prefix tree, given a prefix.
 func searchPrefixTree(prefix string, root PrefixTreeNode) []string {
 	trav := root
 	for _, char := range prefix {
@@ -59,15 +61,17 @@ func searchPrefixTree(prefix string, root PrefixTreeNode) []string {
 	return result
 }
 
-func buildAutocompletionDB(allowed_prompts []string) PrefixTreeNode {
-	root := PrefixTreeNode{
-		false,
-		make(map[rune]PrefixTreeNode, 0),
+// Recursive call that traverses node and prints all children.
+func getAllChildrenAsList(node PrefixTreeNode, current_string string, result *[]string) {
+	if node.is_end_of_word {
+		*result = append(*result, current_string)
 	}
 
-	for _, prompt := range allowed_prompts {
-		addToPrefixTree(prompt, &root)
+	if len(node.children) == 0 {
+		return
 	}
 
-	return root
+	for key, value := range node.children {
+		getAllChildrenAsList(value, current_string+string(key), result)
+	}
 }

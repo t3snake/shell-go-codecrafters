@@ -7,7 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"slices"
 	"strings"
+
+	"golang.org/x/term"
 )
 
 var pwd string
@@ -107,12 +110,7 @@ func writeResultToFile(result, file string, is_append bool) {
 }
 
 func isValidCommand(command string, allowed []string) bool {
-	for i := 0; i < len(allowed); i++ {
-		if allowed[i] == command {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(allowed, command)
 }
 
 func isInPath(command string) string {
@@ -218,7 +216,7 @@ func execPathCmd(command string, args []string) (string, string) {
 	return out.String(), err_out.String()
 }
 
-func execREPL(allowed_prompts []string) {
+func execREPL(allowed_prompts []string, auto_completion_db PrefixTreeNode) {
 	var command string
 	var args []string
 
@@ -230,7 +228,7 @@ func execREPL(allowed_prompts []string) {
 		fmt.Fprint(os.Stdout, "$ ")
 
 		// Wait for user input
-		prompt_newline, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		prompt_newline, err := terminalReadLine(auto_completion_db)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -291,10 +289,15 @@ func execREPL(allowed_prompts []string) {
 
 func main() {
 	allowed_prompts := []string{"exit", "echo", "type", "pwd", "cd"}
-
 	pwd, _ = os.Getwd()
+	auto_completion_db := buildAutocompletionDB(allowed_prompts)
 
-	buildAutocompletionDB(allowed_prompts)
+	// change terminal to raw mode
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
-	execREPL(allowed_prompts)
+	execREPL(allowed_prompts, auto_completion_db)
 }
