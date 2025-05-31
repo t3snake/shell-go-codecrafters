@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"slices"
 	"strings"
 )
 
@@ -76,8 +77,17 @@ func getAllChildrenAsList(node *PrefixTreeNode, current_string string, result *[
 		return
 	}
 
-	for key, value := range node.children {
-		getAllChildrenAsList(value, current_string+string(key), result)
+	// get map keys, cant use maps.Keys in go 1.22 (available in go 1.23)
+	keys := make([]rune, 0)
+	for key := range node.children {
+		keys = append(keys, key)
+	}
+
+	// sort alphabetically
+	slices.Sort(keys)
+
+	for _, key := range keys {
+		getAllChildrenAsList(node.children[key], current_string+string(key), result)
 	}
 }
 
