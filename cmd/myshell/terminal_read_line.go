@@ -55,8 +55,8 @@ func terminalReadLine(auto_completion_db PrefixTreeNode) (string, error) {
 
 			// TODO print all suggestions in new line and move cursor back to where we are typing
 
-		} else if typed_character == '\b' {
-			// backspace handling (\b or 8)
+		} else if typed_character == '\b' || typed_character == 127 {
+			// backspace handling (\b or 8) or terminal might give (del or 127)
 
 			// TODO delete key handling, print(" \b")
 			// space overrides key after cursor and \b moves back cursor to original position
@@ -72,6 +72,7 @@ func terminalReadLine(auto_completion_db PrefixTreeNode) (string, error) {
 			return "", fmt.Errorf("SIGINT")
 		} else if typed_character == '\n' || typed_character == '\r' {
 			// return on line feed (LF) (\n or 10) or carriage return (CR) (\r or 13)
+			fmt.Print("\n")
 			return string(current_buffer), nil
 		} else {
 			// echo the rest
