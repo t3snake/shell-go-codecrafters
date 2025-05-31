@@ -2,50 +2,44 @@ package main
 
 type PrefixTreeNode struct {
 	is_end_of_word bool
-	children       map[rune]PrefixTreeNode
+	children       map[rune]*PrefixTreeNode
 }
 
 // Build prefix tree with list of commands. Returns root node.
-func buildAutocompletionDB(command_list []string) PrefixTreeNode {
-	root := PrefixTreeNode{
+func buildAutocompletionDB(command_list []string) *PrefixTreeNode {
+	root_node := PrefixTreeNode{
 		false,
-		make(map[rune]PrefixTreeNode, 0),
+		make(map[rune]*PrefixTreeNode, 0),
 	}
 
 	for _, prompt := range command_list {
-		addToPrefixTree(prompt, &root)
+		addToPrefixTree(prompt, &root_node)
 	}
 
-	return root
+	return &root_node
 }
 
 // Add command to given prefix tree.
 func addToPrefixTree(command string, root *PrefixTreeNode) {
 	var trav = root
 
-	runes := []rune(command)
-
-	for idx, cur_rune := range runes {
+	for _, cur_rune := range command {
 		val, ok := trav.children[cur_rune]
 		if ok {
-			trav = &val
+			trav = val
 		} else {
-			(*trav).children[cur_rune] = PrefixTreeNode{
+			trav.children[cur_rune] = &PrefixTreeNode{
 				false,
-				make(map[rune]PrefixTreeNode, 0),
+				make(map[rune]*PrefixTreeNode, 0),
 			}
-			child := trav.children[cur_rune]
-			trav = &child
-		}
-
-		if idx == len(runes)-1 {
-			trav.is_end_of_word = true
+			trav = trav.children[cur_rune]
 		}
 	}
+	trav.is_end_of_word = true
 }
 
 // Search all possible words in given prefix tree, given a prefix.
-func searchPrefixTree(prefix string, root PrefixTreeNode) []string {
+func searchPrefixTree(prefix string, root *PrefixTreeNode) []string {
 	trav := root
 	for _, char := range prefix {
 		val, ok := trav.children[char]
@@ -62,7 +56,7 @@ func searchPrefixTree(prefix string, root PrefixTreeNode) []string {
 }
 
 // Recursive call that traverses node and prints all children.
-func getAllChildrenAsList(node PrefixTreeNode, current_string string, result *[]string) {
+func getAllChildrenAsList(node *PrefixTreeNode, current_string string, result *[]string) {
 	if node.is_end_of_word {
 		*result = append(*result, current_string)
 	}

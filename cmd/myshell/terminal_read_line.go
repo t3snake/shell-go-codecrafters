@@ -16,7 +16,7 @@ const RESTORE_CURSOR_POS = "\033[u"
 const MOVE_CURSOR_TO_BEG = "\033[0G"
 const MOVE_CURSOR_1_LEFT = "\033[1D"
 
-func terminalReadLine(auto_completion_db PrefixTreeNode) (string, error) {
+func terminalReadLine(auto_completion_db *PrefixTreeNode) (string, error) {
 	// change terminal to raw mode
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
@@ -68,11 +68,11 @@ func terminalReadLine(auto_completion_db PrefixTreeNode) (string, error) {
 			fmt.Print("\b \b")
 		} else if typed_character == 3 {
 			// ctrl+c or sigint handling (3)
-			fmt.Print("\n")
+			fmt.Print("\r\n")
 			return "", fmt.Errorf("SIGINT")
 		} else if typed_character == '\n' || typed_character == '\r' {
 			// return on line feed (LF) (\n or 10) or carriage return (CR) (\r or 13)
-			fmt.Print("\n")
+			fmt.Print("\r\n")
 			return string(current_buffer), nil
 		} else {
 			// echo the rest

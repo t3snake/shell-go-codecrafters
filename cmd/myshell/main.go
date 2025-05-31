@@ -215,7 +215,7 @@ func execPathCmd(command string, args []string) (string, string) {
 }
 
 // Executes Read Eval Print Loop and returns exit code when done
-func execREPL(allowed_prompts []string, auto_completion_db PrefixTreeNode) int {
+func execREPL(allowed_prompts []string, auto_completion_db *PrefixTreeNode) int {
 	var command string
 	var args []string
 
