@@ -99,8 +99,11 @@ func getCommandsFromDir(dir string, results *[]string) {
 		if entry.IsDir() {
 			continue
 		}
-		entry.Type()
-		if entry.Type()&0111 != 0 {
+		file_info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		if file_info.Mode()&0111 != 0 {
 			*results = append(*results, entry.Name())
 		}
 	}
