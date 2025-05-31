@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -197,9 +198,17 @@ func execInBuiltCmd(command string, args, allowed_prompts []string, history []Hi
 		new_path = resolvePathForCd(new_path)
 		return updatePwdIfExists(new_path, command)
 	case "history":
+		start := 0
+		if len(args) > 0 {
+			num, err := strconv.Atoi(args[0])
+			if err != nil {
+				return "invalid argument: " + args[0]
+			}
+			start = len(history) - num
+		}
 		result := ""
-		for idx, val := range history {
-			result += fmt.Sprintf("\t%d  %s\n", idx, val.command)
+		for i := start; i < len(history); i++ {
+			result += fmt.Sprintf("    %d  %s\n", history[i].id, history[i].command)
 		}
 		return result
 	}

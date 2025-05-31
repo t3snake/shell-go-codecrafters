@@ -10,7 +10,7 @@ func initializeHistory() []HistoryEntry {
 }
 
 func addToHistory(command string, history *[]HistoryEntry) {
-	id := len(*history)
+	id := len(*history) + 1
 
 	entry := HistoryEntry{
 		command,
