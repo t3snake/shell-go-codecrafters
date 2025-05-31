@@ -9,8 +9,6 @@ import (
 	"path"
 	"slices"
 	"strings"
-
-	"golang.org/x/term"
 )
 
 var pwd string
@@ -216,7 +214,8 @@ func execPathCmd(command string, args []string) (string, string) {
 	return out.String(), err_out.String()
 }
 
-func execREPL(allowed_prompts []string, auto_completion_db PrefixTreeNode) {
+// Executes Read Eval Print Loop and returns exit code when done
+func execREPL(allowed_prompts []string, auto_completion_db PrefixTreeNode) int {
 	var command string
 	var args []string
 
@@ -230,7 +229,11 @@ func execREPL(allowed_prompts []string, auto_completion_db PrefixTreeNode) {
 		// Wait for user input
 		prompt_newline, err := terminalReadLine(auto_completion_db)
 		if err != nil {
-			log.Fatal(err)
+			if err.Error() == "SIGINT" {
+				return 130 // exit code 128 + N, N=2 for SIGINT
+			}
+			log.Println(err)
+			return 1 // unexpected error
 		}
 
 		line := strings.Split(prompt_newline, "\n")[0]
@@ -285,6 +288,8 @@ func execREPL(allowed_prompts []string, auto_completion_db PrefixTreeNode) {
 		result_err = ""
 		is_print_to_file = false
 	}
+
+	return 0
 }
 
 func main() {
@@ -292,12 +297,7 @@ func main() {
 	pwd, _ = os.Getwd()
 	auto_completion_db := buildAutocompletionDB(allowed_prompts)
 
-	// change terminal to raw mode
-	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
+	exit_code := execREPL(allowed_prompts, auto_completion_db)
 
-	execREPL(allowed_prompts, auto_completion_db)
+	os.Exit(exit_code)
 }

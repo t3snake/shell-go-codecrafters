@@ -3,10 +3,29 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
+
+	"golang.org/x/term"
 )
 
+// ANSI escape codes
+
+const SAVE_CURSOR_POS = "\033[s"
+const RESTORE_CURSOR_POS = "\033[u"
+const MOVE_CURSOR_TO_BEG = "\033[0G"
+const MOVE_CURSOR_1_LEFT = "\033[1D"
+
 func terminalReadLine(auto_completion_db PrefixTreeNode) (string, error) {
+	// change terminal to raw mode
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// change terminal back to cooked mode
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
+
 	var current_buffer []byte
 	input_char := make([]byte, 1)
 
@@ -41,15 +60,16 @@ func terminalReadLine(auto_completion_db PrefixTreeNode) (string, error) {
 
 			// TODO delete key handling, print(" \b")
 			// space overrides key after cursor and \b moves back cursor to original position
-			// TODO optimization: print("\b \b")
+
+			if len(current_buffer) > 0 {
+				current_buffer = current_buffer[:len(current_buffer)-1]
+			}
 			// \b moves cursor backwards, space overrides and move cursor back again
-			len_prev_buffer := len(current_buffer)
-			current_buffer = current_buffer[:len_prev_buffer-1]
-			redrawBuffer(current_buffer, len_prev_buffer)
+			fmt.Print("\b \b")
 		} else if typed_character == 3 {
 			// ctrl+c or sigint handling (3)
 			fmt.Print("\n")
-			os.Exit(130)
+			return "", fmt.Errorf("SIGINT")
 		} else if typed_character == '\n' || typed_character == '\r' {
 			// return on line feed (LF) (\n or 10) or carriage return (CR) (\r or 13)
 			return string(current_buffer), nil
