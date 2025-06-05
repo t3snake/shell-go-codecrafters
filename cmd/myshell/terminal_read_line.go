@@ -23,7 +23,7 @@ const TERMINAL_DOWN = "\x1b[B"
 func terminalReadLine(auto_completion_db *PrefixTreeNode, history []HistoryEntry) (string, error) {
 	// -1 didnt start navigation, else index of history
 	cur_history := -1
-	var temp_history []byte = nil
+	var temp_history = []byte("")
 
 	// change terminal to raw mode
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
@@ -34,7 +34,7 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode, history []HistoryEntry
 	// change terminal back to cooked mode
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
-	var current_buffer []byte
+	var current_buffer []byte = make([]byte, 0)
 	input_char := make([]byte, 1)
 
 	// successive tab count
@@ -111,12 +111,14 @@ func terminalReadLine(auto_completion_db *PrefixTreeNode, history []HistoryEntry
 		} else if typed_character == 3 {
 			// ctrl+c or sigint handling (3)
 			fmt.Print("\r\n")
-			// reset history navigation
-			cur_history = -1
 			return "", fmt.Errorf("SIGINT")
 		} else if typed_character == '\n' || typed_character == '\r' {
 			// return on line feed (LF) (\n or 10) or carriage return (CR) (\r or 13)
 			fmt.Print("\r\n")
+
+			// reset history navigation
+			cur_history = -1
+
 			return string(current_buffer), nil
 		} else if typed_character == 27 { // arrow keys
 			// (Left, Right, Up, Down) are (27 91 68, 27 91 67, 27 91 65, 27 91 66).
