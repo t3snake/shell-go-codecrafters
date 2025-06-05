@@ -8,12 +8,15 @@ MacOS and Linux supported.
 
 ## Features
 
-- **Built-in Commands**: `echo`, `pwd`, `cd`, and `type`.
+- **Basic REPL**: The shell interacts with the user through a simple Read-Eval-Print-Loop.
+- **Built-in Commands**: `echo`, `pwd`, `cd`, `history`, `exit` and `type`.
 - **Command Execution**: Executes external commands found in the system's `PATH`.
 - **Redirection**: Supports standard output (`1>`) and standard error (`2>`) redirection to files, both for overwriting and appending.
 - **Argument Parsing**: Handles arguments enclosed in quotes (`'` or `"`) and escape sequences (like `\`).
 - **Path Resolution**: Handles relative, absolute, and home (`~`) paths when executing the `cd` command.
-- **Basic REPL**: The shell interacts with the user through a simple Read-Eval-Print-Loop.
+- **Tab Completion**: Pressing <kbd>Tab</kbd> autocompletes commands and executables using a prefix tree built from built-ins and `$PATH`. Supports multiple completion with double tab and partial completions.
+- **Command History**: Use the <kbd>Up</kbd> and <kbd>Down</kbd> arrow keys to navigate through previous commands. The `history` command prints the command history.
+- **Raw Terminal Mode**: The shell uses raw terminal mode for advanced input handling, including custom line editing, history navigation, and tab completion. Build my own GNU readline implementation.
 
 ## Installation
 
@@ -73,12 +76,32 @@ Then run the shell script
   echo is a shell builtin
   ```
 
+- **`history [N]`**: Shows the last N commands entered (or all if N is omitted).
+
+  Example:
+  ```sh
+  $ history 5
+      1  echo Hello
+      2  pwd
+      3  ls
+      4  cd /tmp
+      5  history 5
+  ```
+
 - **`exit [0]`**: Exits the shell when given the argument `0`.
 
   Example:
   ```sh
   $ exit 0
   ```
+
+### Tab Completion
+
+- Press <kbd>Tab</kbd> to autocomplete commands and executables. Press <kbd>Tab</kbd> twice to list all possible completions for the current prefix.
+
+### Command History Navigation
+
+- Use the <kbd>Up</kbd> and <kbd>Down</kbd> arrow keys to scroll through previous commands.
 
 ### Redirection
 
